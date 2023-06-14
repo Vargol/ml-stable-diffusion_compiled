@@ -15,6 +15,7 @@ import numpy as np
 
 import os
 import time
+import re
 
 
 class CoreMLModel:
@@ -24,33 +25,51 @@ class CoreMLModel:
     def __init__(self, model_path, compute_unit):
         assert os.path.exists(model_path) and model_path.endswith(".mlpackage")
 
-        logger.info(f"Loading {model_path}")
-
-        start = time.time()
-        self.model = ct.models.MLModel(
-            model_path, compute_units=ct.ComputeUnit[compute_unit])
-        load_time = time.time() - start
-        logger.info(f"Done. Took {load_time:.1f} seconds.")
-
-        if load_time > LOAD_TIME_INFO_MSG_TRIGGER:
-            logger.info(
-                "Loading a CoreML model through coremltools triggers compilation every time. "
-                "The Swift package we provide uses precompiled Core ML models (.mlmodelc) to avoid compile-on-load."
-            )
-
-
         DTYPE_MAP = {
             65552: np.float16,
             65568: np.float32,
             131104: np.int32,
         }
 
+        compiled_model_path = re.sub('mlpackage$', 'mlmodelc', model_path)
+        model_inputs_path = re.sub('mlpackage$', 'modelinputs', model_path)
+        logger.info(f"Compiled Model Path {compiled_model_path}")
+
+        start = time.time()
+
+        if not os.path.exists(compiled_model_path):
+
+           logger.info(f"Loading {model_path}")
+           self.model = ct.models.MLModel(
+               model_path, compute_units=ct.ComputeUnit[compute_unit])
+           load_time = time.time() - start
+           logger.info(f"Done. Took {load_time:.1f} seconds.")
+
+           self._inputs = self.model._spec.description.input
+
+           if load_time > LOAD_TIME_INFO_MSG_TRIGGER:
+               logger.info(
+                   "Loading a CoreML model through coremltools triggers compilation every time. "
+                   "The Swift package we provide uses precompiled Core ML models (.mlmodelc) to avoid compile-on-load."
+               )
+        else:
+
+           logger.info(f"Loading {compiled_model_path}")
+           self.model = ct.libcoremlpython._MLModelProxy(
+               compiled_model_path, ct.ComputeUnit[compute_unit].name)
+           load_time = time.time() - start
+           logger.info(f"Done. Took {load_time:.1f} seconds.")
+
+           logger.info(f"Loading spec {model_path}")
+           self._inputs = ct.models.utils.load_spec(model_path).description.input
+
+
         self.expected_inputs = {
             input_tensor.name: {
                 "shape": tuple(input_tensor.type.multiArrayType.shape),
                 "dtype": DTYPE_MAP[input_tensor.type.multiArrayType.dataType],
             }
-            for input_tensor in self.model._spec.description.input
+            for input_tensor in self._inputs
         }
 
     def _verify_inputs(self, **kwargs):
@@ -76,6 +95,9 @@ class CoreMLModel:
 
     def __call__(self, **kwargs):
         self._verify_inputs(**kwargs)
+        for k, v in kwargs.items():
+            if isinstance(v, np.ndarray) and v.dtype == np.float16:
+                kwargs[k] = v.astype(np.float32) 
         return self.model.predict(kwargs)
 
 
