@@ -1,5 +1,5 @@
-If you're looking ar this repository you probably want to use precompiled models from python for stable diffusion.
-Here's how to do this. This will reduce the startup time for the script to a few seonds from the 2 or so minutes
+If you're looking at this repository you probably want to use precompiled models from python for stable diffusion.
+This will reduce the startup time for the script to a few seonds from the 2 or so minutes
 it could take.
 
 Download the models from Hugging Face, you want both the mlpackage and per-compiled, modelc, versions
@@ -7,7 +7,8 @@ and put them all in the same directory
 
 So for runwayml/stable-diffusion-v1-5 the directory should have these files.
 
-```Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_safety_checker.mlmodelc
+```
+Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_safety_checker.mlmodelc
 Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_safety_checker.mlpackage
 Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_text_encoder.mlmodelc
 Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_text_encoder.mlpackage
@@ -19,7 +20,8 @@ Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_vae_decoder.mlpackage
 
 Download and set up this repository
 
-```cd ~
+```
+cd ~
 python -m venv apple_sd
 cd apple_sd
 . bin/activate
@@ -30,13 +32,17 @@ pip install .
 
 Then you can run the pipeline.py script e.g
 
-```python python_coreml_stable_diffusion/pipeline.py  --model-version runwayml/stable-diffusion-v1-5  -i ../coreml_models --prompt "The Eiffle Tower on Mars"  -o ../output  --compute-unit ALL --seed 1001  --scheduler PND
 ```
+python python_coreml_stable_diffusion/pipeline.py  --model-version runwayml/stable-diffusion-v1-5  -i ../coreml_models --prompt "The Eiffle Tower on Mars"  -o ../output  --compute-unit ALL --seed 1001 
+```
+
 where `../coreml_models` is the path to where you put those models and `../output` is the path to where you want to save the image produced
 
 
-if All is well you should see the following in the terminal outputa
-```INFO:python_coreml_stable_diffusion.coreml_model:Loading text_encoder mlpackage
+If all is well you should see the following in the terminal outputs
+
+```
+INFO:python_coreml_stable_diffusion.coreml_model:Loading text_encoder mlpackage
 INFO:python_coreml_stable_diffusion.coreml_model:Compiled Model Path ../coreml_models/Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_text_encoder.mlmodelc
 INFO:python_coreml_stable_diffusion.coreml_model:Loading ../coreml_models/Stable_Diffusion_version_runwayml_stable-diffusion-v1-5_text_encoder.mlmodelc
 INFO:python_coreml_stable_diffusion.coreml_model:Done. Took 0.4 seconds.
@@ -48,14 +54,15 @@ Image generation should run it its normal speed.
 
 If you want to run stuff after you closed the terminal window or rebooted you'll need to reactivate the venv
 
-```cd ~
+```
+cd ~
 cd apple_sd
 . bin/activate
 cd ml-stable-diffusion_compiled
 ```
 And then you can run the pipeline.py script again
 
-The origianl README.md now follows
+The original README.md now follows
 
 If you  want to save a bit of diskspace, you can go into the mlpackage and delete the contents of the weights directory (leave the directory itself)
 if only the mlmodel file in there that needed fe the with the compiled model
